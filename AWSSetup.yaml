@@ -1,1 +1,11 @@
-blargo
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Team Serve's Sprint2 API
+  description: A User API for TigerChow's loyal customers and dutiful admins
+
+servers:
+- url: https://tigerchow.api/v1
+
+security:
+- BasicAuth: []
