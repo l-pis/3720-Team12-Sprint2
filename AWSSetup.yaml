@@ -1,11 +1,245 @@
+# Account Services API
+#
+#
+# Description: This API includes the header API information, the Server information,
+#              the user account paths, the user account components such as parameters,
+#              responses, and schema's. This API also includes user accounts and their
+#              properties.
+#
+# Purpose: This API allows users to interact with TigerChow
+
+# ---------General API Information---------
 openapi: 3.0.0
 info:
-  version: 1.0.0
-  title: Team Serve's Sprint2 API
-  description: A User API for TigerChow's loyal customers and dutiful admins
+  title: TigerChow Accounts API
+  description: API for managing user accounts, authentication, preferences, and admin controls.
+  version: 1.1.0
 
+# ---------API Server Information---------
 servers:
-- url: https://tigerchow.api/v1
+- url: https://api.tigerchow.com/accounts
+  description: Production server
 
-security:
-- BasicAuth: []
+# ---------API Paths Information---------
+paths:
+  # Users can be customers, business users, customer service reps, admin, drivers, or other employees; personal information is also stored
+  /auth/login:
+    # Login Authorization branch for authenticating a guest or confirmed user
+    post:
+      summary: Authenticate user or guest
+      description: Allow users to log in using their credentials or as a guest.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userid:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful, returns user details or guest token.
+        '401':
+          description: Invalid credentials.
+
+  # Branch for all activity related to making users and looking at all users
+  /users:
+    # Makes a new user
+    post:
+      summary: Register a new user
+      description: Create a new TigerChow account with preferences and login information.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User registered successfully.
+        '400':
+          description: Invalid request body.
+
+    # Gets all users based on activity status
+    get:
+      summary: Retrieve all user accounts (Admin only)
+      description: Returns a list of all registered users, filtering by active/inactive status if needed.
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [ active, inactive ]
+      responses:
+        '200':
+          description: List of users retrieved.
+        '403':
+          description: Admin access required.
+
+  # Methods related solely to activities involving the user ID
+  /users/{userid}:
+    # Gets user details from specific ID
+    get:
+      summary: Retrieve user details
+      description: Get user account details by user ID.
+      parameters:
+      - name: userid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User details retrieved.
+        '404':
+          description: User not found.
+
+    # Updates user preferences
+    put:
+      summary: Update user preferences
+      description: Modify user preferences using the user ID.
+      parameters:
+      - name: userid
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully.
+        '400':
+          description: Invalid request.
+
+    # Deletes a user
+    delete:
+      summary: Unregister a user (or Admin removes a user)
+      description: Remove a user account and all personal information.
+      parameters:
+      - name: userid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User deleted successfully.
+        '404':
+          description: User not found.
+
+  # Passowrd Specific Functions
+  /users/{userid}/password:
+    # Patches in a new password
+    patch:
+      summary: Update user password
+      description: Change the password for a specific user account.
+      parameters:
+      - name: userid
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                old_password:
+                  type: string
+                new_password:
+                  type: string
+      responses:
+        '200':
+          description: Password updated successfully.
+        '400':
+          description: Invalid request or incorrect old password.
+
+  # Admin Activities
+  /admin/users:
+    # Adds a TigerChow employee 
+    post:
+      summary: Add a TigerChow employee (Admin only)
+      description: Admin can add business users, customer service reps, drivers, and restaurant employees.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Employee added successfully.
+        '403':
+          description: Admin access required.
+
+    # Admin delete a user
+    delete:
+      summary: Remove a user from the system (Admin only)
+      description: Admin can remove any type of user (customer, business user, employee, etc.).
+      parameters:
+      - name: userid
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User removed successfully.
+        '403':
+          description: Admin access required.
+
+# ---------API Components Information---------
+# Contains all reusable parameters, responses, and schemas for the Accounts API
+components:
+
+  # ---------API Schemas Information---------
+  schemas:
+    # User Schema
+    User:
+      type: object
+      properties:
+        userid:
+          type: string
+        password:
+          type: string
+        user_type:
+          type: string
+          enum: [ customer, admin, business_user, driver, restaurant_employee ]
+        notification_preference:
+          type: string
+          enum: [ email, phone, none ]
+        email:
+          type: string
+        phone:
+          type: string
+        active:
+          type: boolean
+
+    # Preferences 
+    UserPreferences:
+      type: object
+      properties:
+        notification_preference:
+          type: string
+          enum: [ email, phone, none ]
+  # ---------API SecuritySchemes Information NOT NEEDED FOR 3720---------
+  #securitySchemes:
+  #  ApiKey:
+  #    type: apiKey
+  #    in: header
+  #    name: X-Api-Key
+
+  # ---------API Security Information  NOT NEEDED FOR 3720---------
+  #security:
+  #  - ApiKey: []
